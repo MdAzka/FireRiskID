@@ -1,0 +1,59 @@
+name: Update Prediksi Harian FireRisk-ID
+
+# KAPAN workflow ini jalan:
+on:
+  schedule:
+    # Cron pakai UTC, bukan WIB. Jam 23:00 UTC = 06:00 WIB (pagi hari).
+    # Dipilih pagi hari supaya prediksi tersedia untuk aktivitas harian
+    # Damkar, dan supaya data hotspot NRT "kemarin" sudah lengkap.
+    - cron: "0 23 * * *"
+  # Tombol manual "Run workflow" di tab Actions GitHub - penting untuk
+  # TESTING dulu sebelum mengandalkan jadwal otomatis di atas.
+  workflow_dispatch:
+
+jobs:
+  update-prediksi:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Ambil isi repo ke runner GitHub Actions
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Siapkan Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Install semua library yang dibutuhkan script.
+      #    CATATAN: geopandas di luar Kaggle/Colab kadang butuh
+      #    dependency sistem (GDAL) - kalau langkah ini gagal,
+      #    itu masalah yang perlu diperbaiki di sini, bukan di
+      #    script Python-nya.
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy requests joblib geopandas lightgbm scikit-learn
+
+      # 4. Jalankan pipeline utama.
+      #    FIRMS_MAP_KEY diambil dari GitHub Secrets, disuntikkan
+      #    sebagai environment variable - TIDAK PERNAH tertulis di
+      #    kode atau log yang bisa dilihat publik.
+      - name: Jalankan update_prediksi_harian.py
+        env:
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+        run: |
+          python update_prediksi_harian.py
+
+      # 5. Commit & push perubahan (histori cuaca, histori hotspot,
+      #    file prediksi terbaru) balik ke repo. TANPA langkah ini,
+      #    semua perubahan cuma ada sementara di runner dan akan
+      #    hilang begitu job selesai - histori TIDAK akan bertambah
+      #    permanen dari hari ke hari.
+      - name: Commit hasil ke repo
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions Bot"
+          git add data/histori_cuaca_kecamatan.csv data/histori_hotspot_kecamatan.csv data/prediksi_kecamatan_terbaru.csv
+          git diff --staged --quiet || git commit -m "Update prediksi harian - $(date +'%Y-%m-%d')"
+          git push
