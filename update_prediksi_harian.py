@@ -429,15 +429,3 @@ if __name__ == "__main__":
 # otomatis tersedia sebagai environment variable dari GitHub Secrets
 # - tidak perlu di-set manual, lihat update_harian.yml.
 #
-# ============================================================
-# CATATAN: FILE HISTORI (histori_cuaca, histori_hotspot, output)
-# ============================================================
-# Di GitHub Actions, file-file ini dibaca & ditulis langsung di
-# dalam folder repo yang sudah di-checkout - tidak ada lagi masalah
-# "read-only vs writable" atau "hilang antar sesi" seperti waktu
-# masih di Kaggle. Supaya histori ini BENERAN permanen (terus
-# bertambah dari hari ke hari), workflow YAML (update_harian.yml)
-# WAJIB melakukan git commit + push atas perubahan file di folder
-# data/ setelah script ini selesai jalan setiap harinya - kalau step
-# commit itu tidak ada/gagal, perubahan hanya ada di runner sementara
-# GitHub Actions dan akan hilang begitu job selesai.

@@ -11,6 +11,12 @@ on:
   # TESTING dulu sebelum mengandalkan jadwal otomatis di atas.
   workflow_dispatch:
 
+# WAJIB: GITHUB_TOKEN bawaan defaultnya cuma izin read-only, walau
+# ini repo milik sendiri. Tanpa baris ini, step "Commit hasil ke repo"
+# akan selalu gagal 403 Permission denied.
+permissions:
+  contents: write
+
 jobs:
   update-prediksi:
     runs-on: ubuntu-latest
